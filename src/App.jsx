@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 const SUPABASE_URL = "https://xspagkuyyvqqzlrudhjf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
 
+// ─── SUPABASE CONFIG ───────────────────────────────────────────────
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
 const supabase = (() => {
   const headers = { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
   const api = async (path, opts = {}) => {
@@ -116,13 +120,17 @@ function SignUpScreen({ onNav, onAuth }) {
     try {
       const res = await supabase.signUp(f.email, f.password);
       const data = await res.json();
-      const token = data.access_token;
       const uid = data.user?.id;
+      // Try to sign in immediately after signup
+      const signInRes = await supabase.signIn(f.email, f.password);
+      const signInData = await signInRes.json();
+      const token = signInData.access_token;
       if (token && uid) {
         await supabase.upsertUserProfile({ user_id: uid, first_name: f.firstName, last_name: f.lastName, username: f.username, email: f.email }, token);
         onAuth({ token, uid, name: f.firstName });
       } else {
-        setMsg({ text: "Account created! Please check your email to confirm, then sign in.", type: "success" });
+        setMsg({ text: "Account created! Please sign in.", type: "success" });
+        setTimeout(() => onNav("signin"), 2000);
       }
     } catch(err) { setMsg({ text: `Error: ${err.message}`, type: "error" }); }
     setLoading(false);
