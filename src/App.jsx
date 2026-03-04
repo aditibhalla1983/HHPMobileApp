@@ -5,6 +5,8 @@ const SUPABASE_URL = "https://xspagkuyyvqqzlrudhjf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcGFna3V5eXZxcXpscnVkaGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NDMyMTgsImV4cCI6MjA4ODIxOTIxOH0.bMnxpnWBqpwJKWuYOI-lLWzZWMvJLtkmxKRQgAB-pMs";
 
 
+
+
 const supabase = (() => {
   const headers = { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
   const api = async (path, opts = {}) => {
@@ -229,7 +231,7 @@ function SignInScreen({ onNav, onAuth }) {
             <div style={{ flex: 1, height: 1, background: C.border }} />
           </div>
           <Btn label="🔵  Continue with Google" onClick={() => {
-            window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${window.location.origin}`;
+            window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin)}`;
           }} secondary />
           <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: C.gray }}>
             No account? <span onClick={() => onNav("signup")} style={{ color: C.primary, fontWeight: 700, cursor: "pointer" }}>Sign Up</span>
@@ -612,6 +614,48 @@ export default function App() {
   const onAuth = (u) => { setUser(u); setScreen("home"); };
   const onSignOut = () => { setUser(null); setScreen("landing"); };
   const onNav = (s) => setScreen(s);
+
+  // Handle Google OAuth callback
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token")) {
+      const params = new URLSearchParams(hash.replace("#", ""));
+      const token = params.get("access_token");
+      if (token) {
+        // Get user info from Supabase
+        fetch(`${SUPABASE_URL}/auth/v1/user`, {
+          headers: {
+            "Content-Type": "application/json",
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${token}`
+          }
+        })
+        .then(r => r.json())
+        .then(async userData => {
+          const uid = userData.id;
+          const name = userData.user_metadata?.full_name || userData.email?.split("@")[0] || "User";
+          const email = userData.email;
+          // Save to UserProfile if not exists
+          try {
+            await fetch(`${SUPABASE_URL}/rest/v1/UserProfile`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${token}`,
+                Prefer: "resolution=ignore-duplicates"
+              },
+              body: JSON.stringify({ user_id: uid, first_name: name.split(" ")[0], last_name: name.split(" ")[1] || "", email, username: email.split("@")[0] })
+            });
+          } catch(e) { console.error("Profile save error:", e); }
+          // Clear hash from URL
+          window.history.replaceState(null, "", window.location.pathname);
+          onAuth({ token, uid, name: name.split(" ")[0] });
+        })
+        .catch(err => console.error("Google auth error:", err));
+      }
+    }
+  }, []);
 
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, sans-serif", maxWidth: 480, margin: "0 auto", background: C.lightGray, minHeight: "100vh" }}>
