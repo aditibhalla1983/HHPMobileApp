@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 // ─── SUPABASE CONFIG ───────────────────────────────────────────────
 const SUPABASE_URL = "https://xspagkuyyvqqzlrudhjf.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcGFna3V5eXZxcXpscnVkaGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NDMyMTgsImV4cCI6MjA4ODIxOTIxOH0.bMnxpnWBqpwJKWuYOI-lLWzZWMvJLtkmxKRQgAB-pMs";
 
 
 
