@@ -6,6 +6,9 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...";
 
 
 
+
+
+
 const supabase = (() => {
   const headers = { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
   const api = async (path, opts = {}) => {
@@ -116,21 +119,52 @@ function SignUpScreen({ onNav, onAuth }) {
     if (f.password.length < 6) return setMsg({ text: "Password must be at least 6 characters.", type: "error" });
     setLoading(true);
     try {
-      const res = await supabase.signUp(f.email, f.password);
-      const data = await res.json();
-      const uid = data.user?.id;
-      // Try to sign in immediately after signup
-      const signInRes = await supabase.signIn(f.email, f.password);
+      // Step 1 - Sign Up
+      setMsg({ text: "Step 1: Creating account...", type: "success" });
+      const signUpRes = await fetch(`${SUPABASE_URL}/auth/v1/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ email: f.email, password: f.password })
+      });
+      const signUpData = await signUpRes.json();
+      console.log("SignUp response:", JSON.stringify(signUpData));
+      const uid = signUpData.user?.id;
+      if (!uid) return setMsg({ text: `Step 1 Failed: ${JSON.stringify(signUpData)}`, type: "error" });
+
+      // Step 2 - Confirm user via SQL won't work from client, try sign in directly
+      setMsg({ text: "Step 2: Signing in...", type: "success" });
+      const signInRes = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ email: f.email, password: f.password })
+      });
       const signInData = await signInRes.json();
+      console.log("SignIn response:", JSON.stringify(signInData));
       const token = signInData.access_token;
-      if (token && uid) {
-        await supabase.upsertUserProfile({ user_id: uid, first_name: f.firstName, last_name: f.lastName, username: f.username, email: f.email }, token);
-        onAuth({ token, uid, name: f.firstName });
-      } else {
-        setMsg({ text: "Account created! Please sign in.", type: "success" });
-        setTimeout(() => onNav("signin"), 2000);
-      }
-    } catch(err) { setMsg({ text: `Error: ${err.message}`, type: "error" }); }
+      if (!token) return setMsg({ text: `Step 2 Failed: ${JSON.stringify(signInData)}`, type: "error" });
+
+      // Step 3 - Save to UserProfile
+      setMsg({ text: "Step 3: Saving profile...", type: "success" });
+      const profileRes = await fetch(`${SUPABASE_URL}/rest/v1/UserProfile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`,
+          Prefer: "resolution=merge-duplicates"
+        },
+        body: JSON.stringify({ user_id: uid, first_name: f.firstName, last_name: f.lastName, username: f.username, email: f.email })
+      });
+      const profileText = await profileRes.text();
+      console.log("Profile save status:", profileRes.status, profileText);
+      if (!profileRes.ok) return setMsg({ text: `Step 3 Failed (${profileRes.status}): ${profileText}`, type: "error" });
+
+      setMsg({ text: "All steps succeeded! ✅", type: "success" });
+      setTimeout(() => onAuth({ token, uid, name: f.firstName }), 1000);
+    } catch(err) {
+      setMsg({ text: `Exception: ${err.message}`, type: "error" });
+      console.error("Full error:", err);
+    }
     setLoading(false);
   };
 
