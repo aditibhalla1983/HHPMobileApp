@@ -7,6 +7,8 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 
 
+
+
 const supabase = (() => {
   const headers = { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
   const api = async (path, opts = {}) => {
@@ -606,7 +608,51 @@ function CommunityScreen({ user, onNav }) {
   );
 }
 
-// ─── APP ───────────────────────────────────────────────────────────
+function ResetPasswordScreen({ token, onNav }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [msg, setMsg] = useState({ text: "", type: "" });
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!password) return setMsg({ text: "Please enter a new password.", type: "error" });
+    if (password.length < 6) return setMsg({ text: "Password must be at least 6 characters.", type: "error" });
+    if (password !== confirm) return setMsg({ text: "Passwords do not match.", type: "error" });
+    setLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ password })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setMsg({ text: "Password updated successfully! ✅ Please sign in.", type: "success" });
+      setTimeout(() => onNav("signin"), 2000);
+    } catch(err) { setMsg({ text: `Error: ${err.message}`, type: "error" }); }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", background: C.lightGray, padding: "80px 20px", display: "flex", alignItems: "center" }}>
+      <div style={{ maxWidth: 400, margin: "0 auto", width: "100%" }}>
+        <Logo />
+        <Card>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 6, textAlign: "center" }}>Set New Password</h2>
+          <p style={{ fontSize: 13, color: C.gray, textAlign: "center", marginBottom: 18 }}>Enter your new password below.</p>
+          <Alert msg={msg.text} type={msg.type} />
+          <Input label="New Password" type="password" value={password} onChange={setPassword} placeholder="Min 6 characters" required />
+          <Input label="Confirm New Password" type="password" value={confirm} onChange={setConfirm} placeholder="Repeat password" required />
+          <Btn label={loading ? "Updating..." : "Update Password"} onClick={submit} disabled={loading} />
+        </Card>
+      </div>
+    </div>
+  );
+}
 export default function App() {
   const [screen, setScreen] = useState("landing");
   const [user, setUser] = useState(null);
