@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 
 // ─── SUPABASE CONFIG ───────────────────────────────────────────────
 // Replace these with your actual Supabase credentials
-const SUPABASE_URL = "[YOUR_SUPABASE_URL](https://xspagkuyyvqqzlrudhjf.supabase.co)";
+const SUPABASE_URL = "https://xspagkuyyvqqzlrudhjf.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_3hRAIz65YnYbKGCUN6wESQ_-aKXPk02";
 
 const supabase = (() => {
