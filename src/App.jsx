@@ -5,10 +5,6 @@ const SUPABASE_URL = "https://xspagkuyyvqqzlrudhjf.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcGFna3V5eXZxcXpscnVkaGpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2NDMyMTgsImV4cCI6MjA4ODIxOTIxOH0.bMnxpnWBqpwJKWuYOI-lLWzZWMvJLtkmxKRQgAB-pMs";
 
 
-
-
-
-
 const supabase = (() => {
   const headers = { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` };
   const api = async (path, opts = {}) => {
@@ -232,7 +228,9 @@ function SignInScreen({ onNav, onAuth }) {
             <span style={{ padding: "0 12px", fontSize: 12, color: C.gray }}>OR</span>
             <div style={{ flex: 1, height: 1, background: C.border }} />
           </div>
-          <Btn label="🔵  Continue with Google" onClick={() => setMsg({ text: "Google Sign-In requires Supabase OAuth setup in your project dashboard.", type: "error" })} secondary />
+          <Btn label="🔵  Continue with Google" onClick={() => {
+            window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${window.location.origin}`;
+          }} secondary />
           <div style={{ textAlign: "center", marginTop: 14, fontSize: 13, color: C.gray }}>
             No account? <span onClick={() => onNav("signup")} style={{ color: C.primary, fontWeight: 700, cursor: "pointer" }}>Sign Up</span>
           </div>
