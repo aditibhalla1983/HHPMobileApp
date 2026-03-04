@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 
 // ─── SUPABASE CONFIG ───────────────────────────────────────────────
@@ -30,6 +29,10 @@ const supabase = (() => {
     getAllHealthProfiles: (token) => api(`HealthProfile?select=*`, { headers: { ...headers, Authorization: `Bearer ${token}` } }),
   };
 })();
+
+// ─── DEBUG — Remove after fixing ──────────────────────────────────
+console.log("SUPABASE_URL:", SUPABASE_URL);
+console.log("ANON_KEY starts with:", SUPABASE_ANON_KEY?.slice(0, 20));
 
 // ─── COLORS ────────────────────────────────────────────────────────
 const C = { primary: "#1a7fd4", light: "#e8f4fd", accent: "#0d5fa3", white: "#ffffff", gray: "#6b7280", lightGray: "#f3f8fd", border: "#cce0f5", danger: "#ef4444", success: "#22c55e", text: "#1e293b" };
